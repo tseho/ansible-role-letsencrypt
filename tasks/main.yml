@@ -1,0 +1,49 @@
+---
+- name: Install letsencrypt
+  apt:
+    name: letsencrypt
+    state: latest
+
+- name: Create letsencrypt public directory
+  file:
+    name: "{{ letsencrypt_public_dir }}"
+    state: directory
+
+- name: Register default facts
+  set_fact:
+    letsencrypt_domains_installed: []
+    letsencrypt_cmd_args_domains: "{{ letsencrypt_domains|join(' -d ') }}"
+
+# Retrieve list of currently installed domains
+- include_tasks: "status.yml"
+
+- name: Check if a certificate update is needed
+  set_fact:
+    letsencrypt_certificate_needs_update: "{{ letsencrypt_domains_installed != letsencrypt_domains }}"
+
+- include_tasks: "{{ letsencrypt_server }}-install.yml"
+  when: letsencrypt_certificate_needs_update
+
+- name: Create letsencrypt certificate
+  shell: letsencrypt certonly -n --webroot -w {{ letsencrypt_public_dir }} --cert-name {{ letsencrypt_cert_name }} -m {{ letsencrypt_email }} --agree-tos -d {{ letsencrypt_cmd_args_domains }}
+  args:
+    creates: /etc/letsencrypt/live/{{ letsencrypt_cert_name }}
+  ignore_errors: yes
+  when:
+    - letsencrypt_domains|length > 0
+    - letsencrypt_certificate_needs_update
+
+- include_tasks: "{{ letsencrypt_server }}-cleanup.yml"
+  when: letsencrypt_certificate_needs_update
+
+- name: Set letsencrypt cronjob for cert renewal
+  cron:
+    name: letsencrypt_renewal
+    special_time: weekly
+    user: root
+    cron_file: ansible_letsencrypt
+    job: letsencrypt renew -n --webroot -w {{ letsencrypt_public_dir }} -m {{ letsencrypt_email }} --agree-tos && /etc/init.d/nginx reload
+  when: letsencrypt_domains|length > 0
+
+# Update list of currently installed domains
+- include_tasks: "status.yml"

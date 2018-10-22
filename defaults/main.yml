@@ -1,0 +1,13 @@
+---
+
+# webroot for letsencrypt where validation will happen
+letsencrypt_public_dir: /var/www/letsencrypt
+# Only nginx is supported currently
+letsencrypt_server: nginx
+# Name of the certificate
+letsencrypt_cert_name: default
+
+# Email is required
+#letsencrypt_email: contact@example.com
+
+letsencrypt_domains: []

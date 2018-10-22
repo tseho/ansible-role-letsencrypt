@@ -1,0 +1,20 @@
+# {{ ansible_managed }}
+
+{% for domain in letsencrypt_domains %}
+
+# Listen on {{ domain }}:80 for certificate validation
+server {
+    listen 80;
+    server_name {{ domain }};
+
+    location /.well-known {
+        root {{ letsencrypt_public_dir }};
+        allow all;
+    }
+
+    location / {
+        rewrite ^ https://{{ domain }}$request_uri? redirect;
+    }
+}
+
+{% endfor %}

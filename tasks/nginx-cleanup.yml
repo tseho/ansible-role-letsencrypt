@@ -1,0 +1,11 @@
+---
+- name: Remove nginx conf for letsencrypt
+  file:
+    path: /etc/nginx/sites-enabled/0-letsencrypt.conf
+    state: absent
+
+- name: Reload nginx
+  service:
+    name: nginx
+    state: restarted
+  changed_when: false

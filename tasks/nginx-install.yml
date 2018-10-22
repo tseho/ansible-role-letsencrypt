@@ -1,0 +1,21 @@
+---
+- name: Ensure nginx is installed.
+  apt:
+    name: nginx
+    state: present
+
+- name: Generate nginx dhparams
+  shell: openssl dhparam -out /etc/nginx/dhparams.pem 2048
+  args:
+    creates: /etc/nginx/dhparams.pem
+
+- name: Install nginx conf for letsencrypt
+  template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/sites-enabled/0-letsencrypt.conf
+
+- name: Reload nginx
+  service:
+    name: nginx
+    state: restarted
+  changed_when: false

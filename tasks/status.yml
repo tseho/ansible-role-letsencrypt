@@ -1,0 +1,14 @@
+---
+- name: Retrieve certificates status
+  shell: letsencrypt certificates --cert-name {{ letsencrypt_cert_name }}
+  register: letsencrypt_certificates_status_result
+  changed_when: false
+
+- name: Retrieve only the domains by regex
+  set_fact:
+    letsencrypt_certificates_status_result_regex: "{{ letsencrypt_certificates_status_result.stdout|regex_findall('\n    Domains:\ (.*)\n') }}"
+
+- name: Update list of installed domains, if any
+  set_fact:
+    letsencrypt_domains_installed: "{{ (letsencrypt_certificates_status_result_regex|first).split(' ') }}"
+  when: letsencrypt_certificates_status_result_regex|length > 0
